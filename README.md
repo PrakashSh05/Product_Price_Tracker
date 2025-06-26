@@ -20,7 +20,7 @@ A web application that tracks Amazon product prices and sends email notification
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/PrakashSh05/Product_Price_Tracker
    cd amazon-price-tracker
    ```
 
