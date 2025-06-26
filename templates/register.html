@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Price Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Create Account</h4>
+                </div>
+                
+                <!-- Flash messages -->
+                <div class="px-4 pt-4">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.register') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), 
+                                         placeholder="Choose a username", id="username") }}
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.username.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), 
+                                       placeholder="Enter your email", id="email") }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.email.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), 
+                                          placeholder="Create a password", id="password") }}
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.password.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), 
+                                                 placeholder="Confirm your password", id="confirm_password") }}
+                            {% if form.confirm_password.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.confirm_password.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        <p class="mb-0">
+                            Already have an account? 
+                            <a href="{{ url_for('auth.login') }}" class="text-primary">Sign in</a>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="card-footer bg-transparent py-3 text-center">
+                    <p class="mb-0">
+                        Already have an account? 
+                        <a href="{{ url_for('auth.login') }}" class="text-primary fw-semibold text-decoration-none">
+                            Sign in
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // Add animation to form elements
+    document.addEventListener('DOMContentLoaded', function() {
+        const formElements = document.querySelectorAll('.form-floating');
+        formElements.forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(20px)';
+            element.style.transition = `all 0.5s ease ${index * 0.1}s`;
+            
+            // Trigger reflow
+            element.offsetHeight;
+            
+            // Animate in
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        });
+
+        // Initialize password strength meter if elements exist
+        const passwordInput = document.getElementById('password');
+        const passwordStrength = document.getElementById('passwordStrength');
+        const passwordHelp = document.getElementById('passwordHelp');
+
+        if (passwordInput && passwordStrength && passwordHelp) {
+            passwordInput.addEventListener('input', function() {
+                const password = this.value;
+                let strength = 0;
+                
+                // Check password length
+                if (password.length >= 8) strength += 1;
+                
+                // Check for lowercase letters
+                if (password.match(/[a-z]+/)) strength += 1;
+                
+                // Check for uppercase letters
+                if (password.match(/[A-Z]+/)) strength += 1;
+                
+                // Check for numbers
+                if (password.match(/[0-9]+/)) strength += 1;
+                
+                // Check for special characters
+                if (password.match(/[!@#$%^&*(),.?":{}|<>]+/)) strength += 1;
+                
+                // Update progress bar
+                const width = (strength / 5) * 100;
+                passwordStrength.style.width = width + '%';
+                
+                // Update colors and help text based on strength
+                if (password.length === 0) {
+                    passwordStrength.style.backgroundColor = '';
+                    passwordHelp.textContent = 'Password strength';
+                    passwordHelp.className = 'text-muted';
+                } else if (strength <= 1) {
+                    passwordStrength.style.backgroundColor = '#dc3545';
+                    passwordHelp.textContent = 'Very Weak';
+                    passwordHelp.className = 'text-danger';
+                } else if (strength <= 2) {
+                    passwordStrength.style.backgroundColor = '#fd7e14';
+                    passwordHelp.textContent = 'Weak';
+                    passwordHelp.className = 'text-warning';
+                } else if (strength <= 3) {
+                    passwordStrength.style.backgroundColor = '#ffc107';
+                    passwordHelp.textContent = 'Moderate';
+                    passwordHelp.className = 'text-warning';
+                } else if (strength <= 4) {
+                    passwordStrength.style.backgroundColor = '#20c997';
+                    passwordHelp.textContent = 'Strong';
+                    passwordHelp.className = 'text-success';
+                } else {
+                    passwordStrength.style.backgroundColor = '#198754';
+                    passwordHelp.textContent = 'Very Strong';
+                    passwordHelp.className = 'text-success';
+                }
+            });
+        }
+
+        // Confirm password validation
+        const confirmPassword = document.getElementById('confirmPassword');
+        if (confirmPassword) {
+            confirmPassword.addEventListener('input', function() {
+                const password = document.getElementById('password').value;
+                if (this.value !== password) {
+                    this.setCustomValidity('Passwords do not match');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+        }
+
+        // Form validation
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    });
+</script>
+{% endblock %}

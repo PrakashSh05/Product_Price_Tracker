@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Track a New Product</h4>
+            </div>
+            <div class="card-body">
+                <form id="tracking-form">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">Amazon Product URL</label>
+                        <input type="url" class="form-control" id="url" required 
+                               placeholder="https://www.amazon.com/dp/...">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" required
+                                   placeholder="you@example.com">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="threshold" class="form-label">Price Alert Threshold ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="threshold" 
+                                       step="0.01" min="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search-dollar me-2"></i>Track Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <h3 class="text-center mb-4">How It Works</h3>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                <i class="fas fa-link fa-2x text-primary"></i>
+                            </div>
+                            <h5>1. Paste URL</h5>
+                            <p class="text-muted">Enter the Amazon product URL you want to track.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                <i class="fas fa-bell fa-2x text-primary"></i>
+                            </div>
+                            <h5>2. Set Price Alert</h5>
+                            <p class="text-muted">Choose your target price to receive an email alert.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                <i class="fas fa-chart-line fa-2x text-primary"></i>
+                            </div>
+                            <h5>3. Track & Save</h5>
+                            <p class="text-muted">Monitor price history and get notified when the price drops.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Success!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle fa-4x text-success"></i>
+                </div>
+                <h4>Product Added to Tracker</h4>
+                <p class="mb-0">We'll monitor the price and notify you when it drops below your target.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <a href="/dashboard" class="btn btn-success">View Dashboard</a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Add Another</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('tracking-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const url = document.getElementById('url').value;
+    const email = document.getElementById('email').value;
+    const threshold = document.getElementById('threshold').value;
+    
+    try {
+        const response = await fetch("{{ url_for('main.track_product') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                url: url,
+                threshold_price: parseFloat(threshold)
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Show success modal
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            
+            // Update modal with product info
+            const modalBody = document.querySelector('#successModal .modal-body');
+            if (data.product_info) {
+                modalBody.innerHTML = `
+                    <div class="mb-3">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h4>${data.product_info.title}</h4>
+                    <p class="mb-2">Current Price: <strong>$${data.product_info.price?.toFixed(2) || 'N/A'}</strong></p>
+                    <p class="mb-0">We'll notify you when the price drops below $${parseFloat(threshold).toFixed(2)}</p>
+                `;
+            }
+            
+            successModal.show();
+            
+            // Reset form
+            if (!e.detail || e.detail === 1) {
+                e.target.reset();
+            }
+        } else {
+            // Show error message
+            const errorMsg = data.error || 'An error occurred. Please try again.';
+            const errorDetails = data.details ? `\n\n${data.details}` : '';
+            alert(`${errorMsg}${errorDetails}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+});
+</script>
+{% endblock %}
